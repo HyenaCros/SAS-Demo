@@ -1,0 +1,65 @@
+version: '3'
+
+services:
+  data_handler:
+    container_name: data_handler
+    build:
+      context: .
+      dockerfile: ./DataHandler/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://+:80
+    ports:
+      - '3000:80'
+    networks:
+      - my-network
+  file_storage:
+    container_name: file_storage
+    build:
+      context: .
+      dockerfile: ./FileStorage/Dockerfile
+    environment:
+        - ASPNETCORE_URLS=http://+:80
+    ports:
+      - '2000:80'
+    networks:
+      - my-network
+  file_watcher:
+    container_name: file_watcher
+    build:
+      context: .
+      dockerfile: ./FileWatcher/Dockerfile
+    environment:
+        - ASPNETCORE_URLS=http://+:80
+        - FileStorageUrl=http://file_storage:80/
+        - DataHandlerUrl=http://data_handler:80/
+        - ValidatorUrl=http://validator:80/
+    ports:
+      - '4000:80'
+    networks:
+      - my-network
+  validator:
+    container_name: validator
+    build:
+      context: .
+      dockerfile: ./Validator/Dockerfile
+    environment:
+        - ASPNETCORE_URLS=http://+:80
+        - DataHandlerUrl=http://data_handler:80/
+        - FileStorageUrl=http://file_storage:80/
+    ports:
+      - '5000:80'
+    networks:
+      - my-network
+  client:
+    container_name: client
+    build:
+      context: ./Client
+      dockerfile: Dockerfile
+    ports:
+      - '8000:80'
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    external: true
