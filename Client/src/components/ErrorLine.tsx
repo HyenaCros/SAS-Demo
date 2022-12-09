@@ -31,7 +31,7 @@ export default class ErrorLine extends React.PureComponent<Props> {
   render() {
     const { error } = this.props;
     return error.line ? 
-      <OverlayTrigger trigger="hover" placement="top" delay={500} overlay={
+      <OverlayTrigger trigger="hover" placement="top" delay={500} key={error.id} overlay={
         <Popover>
           <Popover.Header>Error Line</Popover.Header>
           <Popover.Body>

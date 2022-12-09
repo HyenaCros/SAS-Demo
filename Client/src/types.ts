@@ -1,6 +1,6 @@
 export interface FileUploadRecord {
   id: string;
-  dateUploaded: string;
+  dateUploaded: string | Date;
   status: UploadStatus;
   fileName: string;
   type: ClaimType;
@@ -39,10 +39,9 @@ export interface ErrorRecord {
 }
 
 export interface ErrorLogRecord extends ErrorRecord {
-  id: string;
   fileName: string;
   fileUploadId: string;
-  dateCreated: string;
+  dateCreated: string | Date;
 }
 
 export enum UploadStatus {

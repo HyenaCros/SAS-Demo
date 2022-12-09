@@ -2,8 +2,8 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { ErrorLogRecord, FileUploadRecord } from '../types';
 
 export class FileUploadService {
-  private static _fileUploads;
-  private static _errorLogs;
+  private static _fileUploads: BehaviorSubject<Record<string, FileUploadRecord>>;
+  private static _errorLogs: BehaviorSubject<Record<string, ErrorLogRecord>>;
 
   public static get FileUploads(): Observable<Record<string, FileUploadRecord>> {
     if (this._fileUploads == null) {
@@ -30,6 +30,7 @@ export class FileUploadService {
     const fileUpload = await response.json();
     if (this._fileUploads == null)
       return;
+    fileUpload.dateCreated = new Date(fileUpload.dateCreated);
     this._fileUploads.value[fileUpload.id] = fileUpload;
     this._fileUploads.next(this._fileUploads.value);
   }
@@ -47,11 +48,16 @@ export class FileUploadService {
       this._fileUploads = new BehaviorSubject<Record<string, FileUploadRecord>>({});
     this.GetFileUploads().then(fileUploads => {
       fileUploads.forEach(fileUpload => {
+        fileUpload.dateUploaded = new Date(fileUpload.dateUploaded);
         this._fileUploads.value[fileUpload.id] = fileUpload;
         if (this._errorLogs == null)
           return;
         fileUpload.errors.forEach(error => {
-          this._errorLogs.value[error.id]
+          const errorLog = error as ErrorLogRecord;
+          errorLog.fileName = fileUpload.fileName;
+          errorLog.fileUploadId = fileUpload.id;
+          errorLog.dateCreated = fileUpload.dateUploaded;
+          this._errorLogs.value[error.id] = errorLog;
         });
       });
       this._fileUploads.next(this._fileUploads.value);
@@ -66,6 +72,7 @@ export class FileUploadService {
     this.GetErrorLogs().then(errorLogs => {
       const state = this._errorLogs.value;
       errorLogs.forEach(errorLog => {
+        errorLog.dateCreated = new Date(errorLog.dateCreated);
         state[errorLog.id] = errorLog;
       });
       this._errorLogs.next(state);

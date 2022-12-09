@@ -26,7 +26,9 @@ class FileUploadView extends React.PureComponent<Props, State> {
 
   componentDidMount() {
     FileUploadService.FileUploads.pipe(takeUntil(this._destroyed)).subscribe(fileUploadMap => {
-      const fileUploads = Object.keys(fileUploadMap).map(x => fileUploadMap[x]);
+      const fileUploads = Object.keys(fileUploadMap)
+        .map(x => fileUploadMap[x])
+        .sort((a, b) => a.dateUploaded < b.dateUploaded ? 1 : -1);
       this.setState({ fileUploads });
     });
   }
