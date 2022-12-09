@@ -87,15 +87,20 @@ public class FtpService
     {
         var data = await TryFetchFile(fileInfo.Name);
         var columns = data.Split('|');
-        if (columns.Length != 4)
-            throw new Exception("Invalid Trigger File");
-        return new FileData()
+        try
         {
-            FileName = columns[0],
-            FileType = columns[1][0].ToFileType(),
-            RecordCount = int.Parse(columns[2]),
-            Checksum = columns[3],
-        };
+            return new FileData()
+            {
+                FileName = columns[0],
+                FileType = columns[1][0].ToFileType(),
+                RecordCount = int.Parse(columns[2]),
+                Checksum = columns[3],
+            };
+        }
+        catch
+        {
+            throw new Exception("Invalid Trigger File");
+        }
     }
 
     private async Task<string> TryFetchFile(string fileName)
