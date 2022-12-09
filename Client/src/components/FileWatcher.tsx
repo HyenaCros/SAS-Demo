@@ -5,13 +5,15 @@ import { FileWatcherService } from "../services/FileWatcherService";
 
 interface State {
   status: boolean;
+  updating: boolean;
 }
 
-export default class FileWatcher extends React.Component<{}, State> {
-  constructor(props: any) {
+export default class FileWatcher extends React.PureComponent<{}, State> {
+  constructor(props) {
     super(props);
     this.state = {
-      status: false
+      status: false,
+      updating: false
     }
   }
   async componentDidMount() {
@@ -19,29 +21,20 @@ export default class FileWatcher extends React.Component<{}, State> {
   }
   updateStatus = async () => {
     const status = await FileWatcherService.GetStatus();
-    this.setState({ status });
+    this.setState({ status, updating: false });
   }
-  enable = async () => {
-    await FileWatcherService.Start();
-    await this.updateStatus();
-  }
-  disable = async () => {
-    await FileWatcherService.Stop();
+  toggle = async () => {
+    this.setState({ updating: true });
+    if (this.state.status)
+      await FileWatcherService.Stop();
+    else
+      await FileWatcherService.Start();
     await this.updateStatus();
   }
   render() {
-    const { status } = this.state;
-    return (<Container>
-      <Card>
-        <CardHeader>File Watcher Status</CardHeader>
-        <Card.Body>
-          {status.toString()}
-        </Card.Body>
-        <Card.Footer>
-          <Button onClick={this.enable}>Enable</Button>
-          <Button onClick={this.disable}>Disable</Button>
-        </Card.Footer>
-      </Card>
-    </Container>);
+    const { status, updating } = this.state;
+    return (
+      <Button className="float-start" onClick={this.toggle} disabled={updating}>{status ? 'Disable' : 'Enable'} File Watcher</Button>
+    );
   }
 }

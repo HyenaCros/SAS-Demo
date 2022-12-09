@@ -2,6 +2,10 @@ import esbuild from 'esbuild';
 import http from 'http';
 import { sassPlugin } from 'esbuild-sass-plugin';
 
+const apiPort = 3000;
+const fileWatcherPort = 4000;
+
+const log = (msg) => console.log(msg);
 esbuild.serve({
     servedir: 'www'
 }, {
@@ -10,6 +14,7 @@ esbuild.serve({
     outfile: 'www/js/app.js',
     sourcemap: true,
     plugins: [sassPlugin()],
+    logLevel: 'info'
 }).then(result => {
     // The result tells us where esbuild's local server is
     const {host, port} = result
@@ -28,16 +33,13 @@ esbuild.serve({
         options.path = '';
       }
 
+      if (options.path.startsWith('/api/')) {
+        options.port = options.path.startsWith('/api/Polling') ? fileWatcherPort : apiPort;
+      }
+
       // Forward each incoming request to esbuild
       const proxyReq = http.request(options, proxyRes => {
-        // If esbuild returns "not found", send a custom 404 page
-        if (proxyRes.statusCode === 404) {
-          res.writeHead(404, { 'Content-Type': 'text/html' });
-          res.end('<h1>A custom 404 page</h1>');
-          return;
-        }
   
-        // Otherwise, forward the response from esbuild to the client
         res.writeHead(proxyRes.statusCode, proxyRes.headers);
         proxyRes.pipe(res, { end: true });
       });

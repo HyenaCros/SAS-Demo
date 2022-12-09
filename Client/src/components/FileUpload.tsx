@@ -2,6 +2,7 @@ import React, { ChangeEvent, FormEvent } from "react";
 import { Button, Card, Container, Form } from "react-bootstrap";
 import CardHeader from "react-bootstrap/esm/CardHeader";
 import { FileUploadService } from "../services/FileUploadService";
+import FileWatcher from "./FileWatcher";
 
 interface State {
   validated: boolean;
@@ -9,8 +10,8 @@ interface State {
   type: string;
 }
 
-export default class FileUpload extends React.Component<{}, State> {
-  constructor(props: any) {
+export default class FileUpload extends React.PureComponent<{}, State> {
+  constructor(props) {
     super(props);
     this.state = {
       validated: false,
@@ -22,7 +23,7 @@ export default class FileUpload extends React.Component<{}, State> {
     event.preventDefault();
     event.stopPropagation();
     const form = event.currentTarget as HTMLFormElement;
-    
+
     if (form.checkValidity() === false) {
       this.setState({ validated: true });
       return;
@@ -40,33 +41,34 @@ export default class FileUpload extends React.Component<{}, State> {
   }
   render() {
     const { validated, file, type } = this.state;
-    return (<Container>
+    return (
       <Form noValidate onSubmit={this.handleSumbit} validated={validated}>
         <Card>
-          <CardHeader>File Upload</CardHeader>
+          <CardHeader className="text-bg-dark">File Upload</CardHeader>
           <Card.Body>
             <Form.Group className="mb-3">
               <Form.Label>File</Form.Label>
               <Form.Control type="file" required onChange={this.updateFile} />
-              <Form.Control.Feedback/>
+              <Form.Control.Feedback />
             </Form.Group>
             <Form.Group>
               <Form.Label>Type</Form.Label>
               <Form.Select required onChange={this.updateType} value={type}>
-                <option value="" style={{display: 'none'}}>Select a type</option>
+                <option value="" style={{ display: 'none' }}>Select a type</option>
                 <option>Medical</option>
                 <option>Hospital</option>
                 <option>Dental</option>
                 <option>Prescription</option>
               </Form.Select>
-              <Form.Control.Feedback/>
+              <Form.Control.Feedback />
             </Form.Group>
           </Card.Body>
-          <Card.Footer>
-            <Button type="submit">Submit</Button>
+          <Card.Footer className="text-bg-dark">
+            <FileWatcher />
+            <Button type="submit" className="float-end mx-2">Submit</Button>
           </Card.Footer>
         </Card>
       </Form>
-    </Container>);
+    );
   }
 }

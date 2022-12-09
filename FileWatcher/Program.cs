@@ -3,6 +3,7 @@ using FileWatcher;
 using FileWatcher.Services;
 using Rebex.Net;
 using Shared;
+using Shared.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +21,7 @@ builder.Services.AddSingleton(settings);
 builder.Services.AddSingleton(new Sftp());
 builder.Services.AddSingleton(new DataHandlerService(settings.DataHandlerUrl));
 builder.Services.AddSingleton(new FileStorageService(settings.FileStorageUrl));
-builder.Services.AddSingleton<ValidationService>();
+builder.Services.AddSingleton(new ValidationService(settings.ValidatorUrl));
 builder.Services.AddSingleton<FtpService>();
 builder.Services.AddHostedService<BackgroundPollingService>();
 var app = builder.Build();
@@ -31,8 +32,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseCors(config => config.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod());
 
 app.UseAuthorization();
 

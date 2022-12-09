@@ -18,4 +18,5 @@ public class HospitalClaimModel
     public decimal ClaimAmount { get; set; }
     public DateTime ProcedureDate { get; set; }
     public string ProcedureCode { get; set; }
+    public FileUploadModel FileUpload { get; set; }
 }

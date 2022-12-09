@@ -17,4 +17,5 @@ public class PrescriptionClaimModel
     public int ProviderId { get; set; }
     public decimal ClaimAmount { get; set; }
     public int DrugId { get; set; }
+    public FileUploadModel FileUpload { get; set; }
 }

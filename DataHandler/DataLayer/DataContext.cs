@@ -10,7 +10,7 @@ public class DataContext : DbContext
     public DbSet<HospitalClaimModel> HospitalClaims { get; set; }
     public DbSet<DentalClaimModel> DentalClaims { get; set; }
     public DbSet<PrescriptionClaimModel> PrescriptionClaims { get; set; }
-
+    public DbSet<FileUploadModel> FileUploads { get; set; }
     public DataContext(DbContextOptions<DataContext> options) : base(options)
     {
     }

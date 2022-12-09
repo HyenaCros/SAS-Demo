@@ -7,56 +7,73 @@ namespace Validator.Services;
 
 public class ValidationService
 {
+    private const int MAX_COLUMNS = 9;
+    private const int MIN_COLUMNS = 8;
     private readonly FileStorageService _fileStorageService;
+    private readonly DataHandlerService _dataHandlerService;
+    private readonly AppSettings _appSettings;
 
-    public ValidationService(FileStorageService fileStorageService)
+    public ValidationService(FileStorageService fileStorageService, DataHandlerService dataHandlerService,
+        AppSettings appSettings)
     {
         _fileStorageService = fileStorageService;
+        _dataHandlerService = dataHandlerService;
+        _appSettings = appSettings;
     }
 
-    public async Task<ValidationResult> ValidateFileData(BaseFileData fileData)
+    public async Task ValidateFileData(Guid id)
     {
-        var contents = await _fileStorageService.GetFileContents(fileData.FileName);
+        var fileUpload = await _dataHandlerService.GetFileUpload(id);
+        var contents = await _fileStorageService.GetFileContents(fileUpload.FileName);
         var lines = contents.Split('\n').Where(x => !string.IsNullOrEmpty(x)).ToList();
         var errors = new List<ErrorRecord>();
         var records = new List<ClaimRecord>();
         for (var i = 0; i < lines.Count; i++)
         {
-            ValidateLine(lines[i], i, fileData.FileType, records, errors);
+            ValidateLine(lines[i], i, fileUpload.Type, records, errors);
         }
-        
+
         RemoveDuplicates(records, errors);
 
-        foreach (var error in errors)
+        await _dataHandlerService.UpdateFileUpload(new ValidationResult()
         {
-            error.FileName = fileData.FileName;
-            if (error.LineNumber != null)
-                error.Line = lines[error.LineNumber.Value];
-        }
-
-        return new ValidationResult()
-        {
-            Records = records,
-            Errors = errors,
-        };
+            Id = id,
+            ClaimRecords = records,
+            ErrorRecords = errors,
+        });
     }
 
-    private void ValidateLine(string line, int lineIndex, ClaimType claimType, List<ClaimRecord> records, List<ErrorRecord> errors)
+    private void ValidateLine(string line, int lineIndex, ClaimType claimType, List<ClaimRecord> records,
+        List<ErrorRecord> errors)
     {
         var columns = line.Split('|');
         var validatedColumns = new List<object>();
+        if ((claimType == ClaimType.Prescription && columns.Length < MIN_COLUMNS) ||
+            columns.Length < MIN_COLUMNS + 1)
+        {
+            errors.Add(new ErrorRecord()
+            {
+                ErrorMessage = "Too Few Columns",
+                LineNumber = lineIndex,
+                Line = line
+            });
+            return;
+        }
         ErrorRecord error = null;
-        for (var j = 0; j < columns.Length; j++)
+        for (var j = 0; j < MAX_COLUMNS; j++)
         {
             try
             {
                 var column = columns[j];
-                if (column == null)
-                    throw new Exception();
+                if (string.IsNullOrEmpty(column))
+                    throw new Exception("Null Column");
                 switch (j)
                 {
                     case 0:
-                        validatedColumns.Add(column[0].ToFileType());
+                        var type = column[0].ToFileType();
+                        if (!_appSettings.IgnoreMismatchedTypes && type != claimType)
+                            throw new Exception("Line Type Mismatch");
+                        validatedColumns.Add(type);
                         break;
                     case 1:
                     case 3:
@@ -71,30 +88,36 @@ public class ValidationService
                         validatedColumns.Add(DateTime.Parse(column));
                         break;
                     case 7:
-                        validatedColumns.Add(claimType == ClaimType.Prescription ? int.Parse(column) : DateTime.Parse(column));
+                        validatedColumns.Add((ClaimType) validatedColumns[0] == ClaimType.Prescription
+                            ? int.Parse(column)
+                            : DateTime.Parse(column));
                         break;
                     case 8:
+                        if ((ClaimType) validatedColumns[0] == ClaimType.Prescription)
+                            break;
                         validatedColumns.Add(column);
                         break;
                 }
             }
-            catch (ArgumentNullException e)
-            {
-                error = new ErrorRecord()
-                {
-                    ErrorMessage = "Null Column",
-                    LineNumber = lineIndex,
-                    ColumnNumber = j,
-                };
-                break;
-            }
-            catch (FormatException e)
+            catch (FormatException)
             {
                 error = new ErrorRecord()
                 {
                     ErrorMessage = "Invalid Format",
                     LineNumber = lineIndex,
                     ColumnNumber = j,
+                    Line = line
+                };
+                break;
+            }
+            catch (Exception e)
+            {
+                error = new ErrorRecord()
+                {
+                    ErrorMessage = e.Message,
+                    LineNumber = lineIndex,
+                    ColumnNumber = j,
+                    Line = line
                 };
                 break;
             }
@@ -137,13 +160,7 @@ public class ValidationService
 
                 return duplicates;
             });
-        
+
         errors.AddRange(duplicateErrors);
     }
-}
-
-public class ValidationResult
-{
-    public List<ErrorRecord> Errors { get; set; }
-    public List<ClaimRecord> Records { get; set; }
 }

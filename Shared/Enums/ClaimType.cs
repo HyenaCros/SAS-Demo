@@ -1,4 +1,6 @@
-﻿namespace Shared;
+﻿using System.ComponentModel;
+
+namespace Shared;
 
 public enum ClaimType
 {
@@ -17,7 +19,8 @@ public static class ClaimTypeExtensions
             'M' => ClaimType.Medical,
             'H' => ClaimType.Hospital,
             'D' => ClaimType.Dental,
-            'P' => ClaimType.Prescription
+            'P' => ClaimType.Prescription,
+            _ => throw new InvalidEnumArgumentException("Invalid Type")
         };
     }
 }

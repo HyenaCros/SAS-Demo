@@ -14,7 +14,6 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton(settings);
 builder.Services.AddSingleton(new FileStorageService(settings.FileStorageUrl));
 builder.Services.AddSingleton(new DataHandlerService(settings.DataHandlerUrl));
-builder.Services.AddSingleton<ImportService>();
 builder.Services.AddSingleton<ValidationService>();
 builder.Services.AddHostedService<BackgroundQueueService>();
 

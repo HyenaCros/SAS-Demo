@@ -2,6 +2,8 @@
 using System.Text;
 using Rebex.Net;
 using Shared;
+using Shared.Dtos;
+using Shared.Services;
 
 namespace FileWatcher.Services;
 
@@ -46,34 +48,39 @@ public class FtpService
         var rawTriggerFiles = _files.Where(x => x.Name.EndsWith(".trg")).ToList();
         if (rawTriggerFiles.Count == 0)
             return;
-        var errors = new List<ErrorRecord>();
-        var validatedFiles = new List<FileData>();
+        var fileUploads = new List<BaseFileUpload>();
         foreach (var rawTriggerFile in rawTriggerFiles)
         {
+            var fileUpload = new BaseFileUpload()
+            {
+                FileName = rawTriggerFile.Name,
+                Source = FileSource.FileServer,
+                DateUploaded = DateTime.Now,
+            };
+            fileUploads.Add(fileUpload);
             try
             {
                 var dataFile = await ParseTriggerFile(rawTriggerFile);
+                fileUpload.Type = dataFile.FileType;
                 dataFile.Contents = await TryFetchFile(dataFile.FileName);
                 ValidateChecksum(dataFile);
                 ValidateRecordCount(dataFile);
-                validatedFiles.Add(dataFile);
             }
             catch (Exception e)
             {
-                errors.Add(new ErrorRecord()
+                fileUpload.Errors.Add(new ErrorRecord()
                 {
-                    FileName = rawTriggerFile.Name,
                     ErrorMessage = e.Message
                 });
             }
         }
 
-        if (errors.Count > 0)
-            await _dataHandlerService.AddErrorRecords(errors);
-
-        if (validatedFiles.Count == 0)
-            return;
-        await _validationService.ValidateFiles(validatedFiles);
+        var ids = await _dataHandlerService.AddFileUploads(new AddFileUploadsRequest()
+        {
+            Files = fileUploads
+        });
+        
+        await _validationService.ValidateFiles(ids);
     }
 
     private async Task<FileData> ParseTriggerFile(SftpItem fileInfo)

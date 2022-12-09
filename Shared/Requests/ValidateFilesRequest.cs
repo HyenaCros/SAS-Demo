@@ -2,5 +2,5 @@
 
 public class ValidateFilesRequest
 {
-    public List<BaseFileData> Files { get; set; }
+    public List<Guid> Files { get; set; }
 }

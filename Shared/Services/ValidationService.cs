@@ -1,26 +1,25 @@
-﻿using Shared;
+﻿using System.Net.Http.Json;
 
-namespace FileWatcher.Services;
+namespace Shared.Services;
 
 public class ValidationService
 {
     private readonly HttpClient _httpClient;
-    public ValidationService(AppSettings appSettings)
+    public ValidationService(string validatorUrl)
     {
         _httpClient = new HttpClient()
         {
-            BaseAddress = new Uri(appSettings.ValidatorUrl)
+            BaseAddress = new Uri(validatorUrl)
         };
     }
 
-    public async Task ValidateFiles(List<FileData> files)
+    public async Task ValidateFiles(List<Guid> files)
     {
         var response = await _httpClient.PostAsJsonAsync("api/Validation", new ValidateFilesRequest()
         {
-            Files = files.Select(x => (BaseFileData)x).ToList()
+            Files = files
         });
-        Console.WriteLine(response.StatusCode.ToString());
-        Console.WriteLine(response.RequestMessage.RequestUri.ToString());
+
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException(await response.Content.ReadAsStringAsync(), null, response.StatusCode);
     }
